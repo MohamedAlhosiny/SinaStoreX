@@ -10,6 +10,7 @@ use App\Models\Product;
 use Dotenv\Util\Str;
 use Illuminate\Database\QueryException;
 use App\Traits\ApiResponseTrait;
+use GuzzleHttp\Handler\Proxy;
 
 class ProductController2 extends Controller
 {
@@ -187,8 +188,9 @@ class ProductController2 extends Controller
     public function listActiveProducts()
     {
         $products = Product::where('status', 'active')->with(['category' => function ($query) {
-            $query->select('id', 'name');}])
-        ->select('id', 'name', 'description', 'price', 'category_id')->get();
+            $query->select('id', 'name');
+        }])
+            ->select('id', 'name', 'description', 'price', 'category_id')->get();
 
         if (count($products) == 0) {
 
@@ -197,22 +199,40 @@ class ProductController2 extends Controller
         return $this->successResponse($products, 'active products retrieved successfully', 200);
     }
 
-    public function searchProductByName(Request $request){
-       $request->validate([
-        'name' => 'required|string|min:3'
-       ]);
+    public function searchProductByName(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|min:3'
+        ]);
+        $name = $request->input('name');
 
-       $name = $request->name;
-       $products = Product::where('name' , "LIKE" , "%$name%")->get(['id' , 'name' , 'status' , 'price', 'category_id']);
-    //    logger($products);
+        $products = Product::where('name', 'LIKE', "%$name%")->get();
 
-    foreach ($products as $productSearch ) {
-         if ($productSearch->status == 'active' ) {
-        return $this->successResponse($products, 'products found with name like ' . $name , 200);
-    }else {
-        return $this->errorResponse(null, 'no active products found with name like ' . $name , 404);
-    }
-    }
+        if ($products->isEmpty()){
+            return $this->errorResponse(null, 'no products found matching the search criteria', 404);
+        }
+
+        $activeProducts = $products->where('status', 'active')->values();
+        $unactiveProducts = $products->where('status', 'unactive');
+
+
+        if($activeProducts->isEmpty()) {
+            return $this->errorResponse(null, 'no active products found matching the search criteria', 404);
+        }
+
+        if ($activeProducts->count() != 0) {
+            return response()->json([
+                'message' => 'result of search about products',
+                'data' => $activeProducts,
+                'meta' =>$unactiveProducts->isNotEmpty() ? [
+                    'message' => "if exist unactive products matching your search",
+                    'unactive_products' => $unactiveProducts->pluck('name'), ] : null
+
+                ],200);
+        }
+
+
+
     }
 
 }
