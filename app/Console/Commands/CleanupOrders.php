@@ -57,25 +57,25 @@ class CleanupOrders extends Command
 
         $this->info('🚀 Starting cleanup...');
 
-        // 1️⃣ حذف الأوردرات اللي ملهاش منتجات
+        //  حذف الأوردرات اللي ملهاش منتجات
         if ($emptyOrdersCount > 0) {
             Order::doesntHave('products')->delete();
             $this->warn("🗑️ Deleted {$emptyOrdersCount} empty orders.");
         }
 
-        // 2️⃣ حذف الأوردرات اللي فيها منتجات غير متاحة
+        //  حذف الأوردرات اللي فيها منتجات غير متاحة
         if ($inactiveOrdersCount > 0) {
             Order::whereHas('products', fn($q) => $q->where('status', 'unactive'))->delete();
             $this->warn("🗑️ Deleted {$inactiveOrdersCount} orders with unactive products.");
         }
 
-        // 3️⃣ حذف الأوردرات اللي totalPrice = 0
+        //  حذف الأوردرات اللي totalPrice = 0
         if ($zeroTotalCount > 0) {
             Order::where('totalPrice', 0)->delete();
             $this->warn("💸 Deleted {$zeroTotalCount} orders with totalPrice = 0.");
         }
 
-        // 4️⃣ حذف السجلات اليتيمة من الجدول الوسيط
+        //  حذف السجلات اليتيمة من الجدول الوسيط
         if ($orphanPivotCount > 0) {
             DB::table('order_product')
                 ->whereNotIn('order_id', Order::pluck('id'))

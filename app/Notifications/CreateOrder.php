@@ -35,9 +35,8 @@ class CreateOrder extends Notification
         return ['mail' , 'database'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
+
+
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)

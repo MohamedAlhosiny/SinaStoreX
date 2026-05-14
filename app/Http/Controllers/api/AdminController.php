@@ -75,7 +75,7 @@ class AdminController extends Controller
 
     public function dashboardStats(){
         $stats = [
-            'all-users' => User::count(),
+            'all-users' => User::count(), // count() is a method that counts the number of records in the database table associated with the User model and returns that count as an integer.
             'all-admins' => Admin::count(),
             'all-products' => Product::count(),
             'all-orders' => Order::count(),
